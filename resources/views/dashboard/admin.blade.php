@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Admin Dashboard - Kolam Ikan Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -304,6 +305,16 @@
                             <p class="text-gray-600 mt-1">Monitor semua device dan sistem IoT fish monitoring</p>
                         </div>
                         <div class="flex space-x-3">
+                            <!-- Firebase/Database Toggle -->
+                            <div class="flex bg-gray-100 rounded-lg p-1 mr-4">
+                                <button id="btn-firebase" onclick="switchToFirebase()" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 text-gray-600 hover:text-blue-600">
+                                    <i class="fas fa-cloud mr-2"></i>Firebase
+                                </button>
+                                <button id="btn-database" onclick="switchToDatabase()" class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 bg-blue-600 text-white shadow-sm">
+                                    <i class="fas fa-database mr-2"></i>Database Local
+                                </button>
+                            </div>
+                            
                             <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
                                 <i class="fas fa-plus mr-2"></i>Add Device
                             </button>
@@ -311,6 +322,14 @@
                                 <i class="fas fa-download mr-2"></i>Export Data
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Data Source Status -->
+                <div id="data-source-status" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                    <div class="flex items-center">
+                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                        <span id="source-status-text" class="text-blue-800 font-medium">Connected to Database Local</span>
                     </div>
                 </div>
 
@@ -365,6 +384,57 @@
                     </div>
                 </div>
 
+                <!-- Real-time Sensor Data Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="card-gradient rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Temperature</h3>
+                            <i class="fas fa-thermometer-half text-red-500 text-xl"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-900 mb-2">
+                            <span id="admin-temp-value">{{ $latestData ? number_format($latestData->temperature, 1) : '0.0' }}</span>°C
+                        </div>
+                        <p class="text-sm text-gray-600" id="admin-temp-status">
+                            {{ $latestData && $latestData->isTemperatureNormal() ? 'Normal Range' : 'Alert Range' }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-2" id="admin-temp-time">
+                            {{ $latestData ? $latestData->recorded_at->format('d/m/Y H:i:s') : 'No data' }}
+                        </p>
+                    </div>
+
+                    <div class="card-gradient rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">pH Level</h3>
+                            <i class="fas fa-flask text-blue-500 text-xl"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-900 mb-2">
+                            <span id="admin-ph-value">{{ $latestData ? number_format($latestData->ph, 1) : '0.0' }}</span>
+                        </div>
+                        <p class="text-sm text-gray-600" id="admin-ph-status">
+                            {{ $latestData && $latestData->isPhNormal() ? 'Normal Range' : 'Alert Range' }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-2" id="admin-ph-time">
+                            {{ $latestData ? $latestData->recorded_at->format('d/m/Y H:i:s') : 'No data' }}
+                        </p>
+                    </div>
+
+                    <div class="card-gradient rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Oxygen Level</h3>
+                            <i class="fas fa-wind text-green-500 text-xl"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-900 mb-2">
+                            <span id="admin-oxygen-value">{{ $latestData ? number_format($latestData->oxygen, 1) : '0.0' }}</span> mg/L
+                        </div>
+                        <p class="text-sm text-gray-600" id="admin-oxygen-status">
+                            {{ $latestData && $latestData->isOxygenAdequate() ? 'Adequate Level' : 'Alert Range' }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-2" id="admin-oxygen-time">
+                            {{ $latestData ? $latestData->recorded_at->format('d/m/Y H:i:s') : 'No data' }}
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Device Status Cards -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
                     @foreach($devices as $device)
@@ -395,11 +465,11 @@
                                     <div class="flex justify-between items-center mb-1">
                                         <span class="text-sm font-medium text-gray-700">pH Level</span>
                                         <span class="text-sm font-bold {{ $device->latestSensorData->isPhNormal() ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $device->latestSensorData->ph_level }}
+                                            {{ $device->latestSensorData->ph }}
                                         </span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="bg-blue-500 h-2 rounded-full" style="width: {{ ($device->latestSensorData->ph_level / 14) * 100 }}%"></div>
+                                        <div class="bg-blue-500 h-2 rounded-full" style="width: {{ ($device->latestSensorData->ph / 14) * 100 }}%"></div>
                                     </div>
                                 </div>
 
@@ -421,11 +491,11 @@
                                     <div class="flex justify-between items-center mb-1">
                                         <span class="text-sm font-medium text-gray-700">Oxygen</span>
                                         <span class="text-sm font-bold {{ $device->latestSensorData->isOxygenAdequate() ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $device->latestSensorData->oxygen_level }} mg/L
+                                            {{ $device->latestSensorData->oxygen }} mg/L
                                         </span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="bg-green-500 h-2 rounded-full" style="width: {{ min(($device->latestSensorData->oxygen_level / 10) * 100, 100) }}%"></div>
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: {{ min(($device->latestSensorData->oxygen / 10) * 100, 100) }}%"></div>
                                     </div>
                                 </div>
 
@@ -580,7 +650,7 @@
                                     </td>
                                     <td class="py-3 px-6">
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $sensorData->isPhNormal() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ $sensorData->ph_level }}
+                                            {{ $sensorData->ph }}
                                         </span>
                                     </td>
                                     <td class="py-3 px-6">
@@ -590,7 +660,7 @@
                                     </td>
                                     <td class="py-3 px-6">
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $sensorData->isOxygenAdequate() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ $sensorData->oxygen_level }} mg/L
+                                            {{ $sensorData->oxygen }} mg/L
                                         </span>
                                     </td>
                                     <td class="py-3 px-6">
@@ -899,16 +969,149 @@
             event.target.closest('.sidebar-link').classList.add('active');
         }
 
-        // Auto refresh dashboard every 30 seconds
+        // Firebase Data Source Management
+        let currentDataSource = 'database';
+        let refreshInterval;
+
+        function switchToFirebase() {
+            currentDataSource = 'firebase';
+            updateButtonStates('firebase');
+            loadFirebaseData();
+            showStatusMessage('Switching to Firebase...', 'info');
+        }
+
+        function switchToDatabase() {
+            currentDataSource = 'database';
+            updateButtonStates('database');
+            loadDatabaseData();
+            showStatusMessage('Switching to Database Local...', 'info');
+        }
+
+        function updateButtonStates(activeSource) {
+            const firebaseBtn = document.getElementById('btn-firebase');
+            const databaseBtn = document.getElementById('btn-database');
+            
+            if (activeSource === 'firebase') {
+                firebaseBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 bg-orange-500 text-white shadow-sm';
+                databaseBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 text-gray-600 hover:text-blue-600';
+            } else {
+                firebaseBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 text-gray-600 hover:text-orange-600';
+                databaseBtn.className = 'px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 bg-blue-600 text-white shadow-sm';
+            }
+        }
+
+        function loadFirebaseData() {
+            fetch('/admin/api/firebase-data', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.latest) {
+                    updateSensorCards(data.latest, 'firebase');
+                    showStatusMessage('✅ Connected to Firebase - Real-time data loaded', 'success');
+                } else {
+                    showStatusMessage('❌ Firebase connection failed: ' + (data.message || 'No data available'), 'error');
+                    // Fall back to database
+                    switchToDatabase();
+                }
+            })
+            .catch(error => {
+                console.error('Firebase load error:', error);
+                showStatusMessage('❌ Firebase error: ' + error.message, 'error');
+                // Fall back to database
+                switchToDatabase();
+            });
+        }
+
+        function loadDatabaseData() {
+            // Reload page to get fresh database data
+            // In a real implementation, you might want to use AJAX here too
+            showStatusMessage('✅ Connected to Database Local', 'success');
+        }
+
+        function updateSensorCards(data, source) {
+            // Update temperature card
+            document.getElementById('admin-temp-value').textContent = data.temperature || '0.0';
+            document.getElementById('admin-temp-status').textContent = getTemperatureStatus(data.temperature);
+            document.getElementById('admin-temp-time').textContent = data.timestamp || 'No data';
+
+            // Update pH card
+            document.getElementById('admin-ph-value').textContent = data.ph || '0.0';
+            document.getElementById('admin-ph-status').textContent = getPhStatus(data.ph);
+            document.getElementById('admin-ph-time').textContent = data.timestamp || 'No data';
+
+            // Update oxygen card
+            document.getElementById('admin-oxygen-value').textContent = data.oxygen || '0.0';
+            document.getElementById('admin-oxygen-status').textContent = getOxygenStatus(data.oxygen);
+            document.getElementById('admin-oxygen-time').textContent = data.timestamp || 'No data';
+        }
+
+        function getTemperatureStatus(temp) {
+            if (!temp) return 'No Data';
+            return (temp >= 24 && temp <= 30) ? 'Normal Range' : 'Alert Range';
+        }
+
+        function getPhStatus(ph) {
+            if (!ph) return 'No Data';
+            return (ph >= 6.5 && ph <= 8.5) ? 'Normal Range' : 'Alert Range';
+        }
+
+        function getOxygenStatus(oxygen) {
+            if (!oxygen) return 'No Data';
+            return (oxygen >= 5 && oxygen <= 8) ? 'Adequate Level' : 'Alert Range';
+        }
+
+        function showStatusMessage(message, type) {
+            const statusDiv = document.getElementById('data-source-status');
+            const statusText = document.getElementById('source-status-text');
+            
+            statusText.textContent = message;
+            statusDiv.className = 'mb-6 p-4 border rounded-lg';
+            
+            if (type === 'success') {
+                statusDiv.className += ' bg-green-50 border-green-200';
+                statusText.className = 'text-green-800 font-medium';
+            } else if (type === 'error') {
+                statusDiv.className += ' bg-red-50 border-red-200';  
+                statusText.className = 'text-red-800 font-medium';
+            } else {
+                statusDiv.className += ' bg-blue-50 border-blue-200';
+                statusText.className = 'text-blue-800 font-medium';
+            }
+            
+            statusDiv.classList.remove('hidden');
+            
+            // Hide status message after 3 seconds for success/info
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusDiv.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        // Auto refresh current data source every 30 seconds
         setInterval(function() {
             // Only refresh if dashboard is active
             if (document.getElementById('dashboard-content').classList.contains('active')) {
-                console.log('Auto-refreshing dashboard data...');
-                // You can implement AJAX calls here to update data without full page reload
+                if (currentDataSource === 'firebase') {
+                    loadFirebaseData();
+                } else {
+                    console.log('Auto-refreshing database data...');
+                    // For database, you could implement AJAX refresh here too
+                }
             }
         }, 30000);
 
-        console.log('Admin Dashboard with Enhanced Navbar and Sidebar loaded successfully');
+        // Initialize data source status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showStatusMessage('Connected to Database Local', 'success');
+        });
+
+        console.log('Admin Dashboard with Firebase Integration loaded successfully');
     </script>
 </body>
 </html>

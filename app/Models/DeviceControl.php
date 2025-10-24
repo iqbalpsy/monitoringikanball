@@ -5,6 +5,34 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+/**
+ * @property int $id
+ * @property int $device_id
+ * @property int $user_id
+ * @property string $action
+ * @property array<array-key, mixed>|null $parameters
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $executed_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Device $device
+ * @property-read \App\Models\User $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl executed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl pending()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereAction($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereDeviceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereExecutedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereParameters($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|DeviceControl whereUserId($value)
+ * @mixin \Eloquent
+ */
 class DeviceControl extends Model
 {
     use HasFactory;

@@ -95,7 +95,7 @@
                             id="email"
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none input-focus transition-all duration-300"
                             placeholder="Email"
-                            value="{{ old('email') }}"
+                            value="{{ session('email') ?? old('email') }}"
                             required
                         >
                     </div>
@@ -183,7 +183,7 @@
                 <!-- Register Link -->
                 <div class="text-center mt-6">
                     <span class="text-gray-600 text-sm">Belum punya akun? </span>
-                    <a href="#" class="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors">Daftar Sekarang</a>
+                    <a href="{{ route('register') }}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors">Daftar Sekarang</a>
                 </div>
             </form>
         </div>
@@ -252,6 +252,20 @@
                 setTimeout(() => errorMessage.remove(), 300);
             }
         }, 5000);
+
+        // Auto focus on password field if email is pre-filled (from registration)
+        window.addEventListener('DOMContentLoaded', function() {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            if (emailInput.value) {
+                // Email already filled, focus on password
+                passwordInput.focus();
+            } else {
+                // Focus on email
+                emailInput.focus();
+            }
+        });
 
         // Add subtle parallax effect
         document.addEventListener('mousemove', function(e) {

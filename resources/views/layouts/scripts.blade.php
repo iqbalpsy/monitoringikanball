@@ -84,5 +84,12 @@
         if (phSidebar) phSidebar.textContent = phValue + ' pH';
     }
 
+    // Function to confirm logout
+    function confirmLogout(formId) {
+        if (confirm('Apakah Anda yakin ingin keluar dari sistem?')) {
+            document.getElementById(formId).submit();
+        }
+    }
+
     console.log('Admin Dashboard Layout loaded successfully');
 </script>

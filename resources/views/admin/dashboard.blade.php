@@ -78,13 +78,13 @@
                 <canvas id="temperatureGauge" width="192" height="192"></canvas>
                 <div class="absolute inset-0 flex items-center justify-center">
                     <div class="text-center">
-                        <div id="tempValue" class="text-3xl font-bold text-gray-900">26.3</div>
+                        <div id="tempValue" class="text-3xl font-bold text-gray-900">{{ $latestData ? number_format($latestData->temperature, 1) : '0.0' }}</div>
                         <div class="text-sm text-gray-600">°C</div>
                     </div>
                 </div>
             </div>
-            <div id="tempStatus" class="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                Normal
+            <div id="tempStatus" class="px-4 py-2 rounded-full text-sm font-medium {{ $latestData && $latestData->isTemperatureNormal() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                {{ $latestData && $latestData->isTemperatureNormal() ? 'Normal' : 'Warning' }}
             </div>
         </div>
 
@@ -98,13 +98,13 @@
                 <canvas id="oxygenGauge" width="192" height="192"></canvas>
                 <div class="absolute inset-0 flex items-center justify-center">
                     <div class="text-center">
-                        <div id="oxygenValue" class="text-3xl font-bold text-gray-900">8.5</div>
-                        <div class="text-sm text-gray-600">ppm</div>
+                        <div id="oxygenValue" class="text-3xl font-bold text-gray-900">{{ $latestData ? number_format($latestData->oxygen, 1) : '0.0' }}</div>
+                        <div class="text-sm text-gray-600">mg/L</div>
                     </div>
                 </div>
             </div>
-            <div id="oxygenStatus" class="px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                Baik
+            <div id="oxygenStatus" class="px-4 py-2 rounded-full text-sm font-medium {{ $latestData && $latestData->isOxygenAdequate() ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800' }}">
+                {{ $latestData && $latestData->isOxygenAdequate() ? 'Baik' : 'Warning' }}
             </div>
         </div>
 
@@ -118,13 +118,13 @@
                 <canvas id="phGauge" width="192" height="192"></canvas>
                 <div class="absolute inset-0 flex items-center justify-center">
                     <div class="text-center">
-                        <div id="phValue" class="text-3xl font-bold text-gray-900">6.8</div>
+                        <div id="phValue" class="text-3xl font-bold text-gray-900">{{ $latestData ? number_format($latestData->ph, 1) : '0.0' }}</div>
                         <div class="text-sm text-gray-600">pH</div>
                     </div>
                 </div>
             </div>
-            <div id="phStatus" class="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                Normal
+            <div id="phStatus" class="px-4 py-2 rounded-full text-sm font-medium {{ $latestData && $latestData->isPhNormal() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                {{ $latestData && $latestData->isPhNormal() ? 'Normal' : 'Warning' }}
             </div>
         </div>
     </div>
@@ -178,13 +178,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeGaugeCharts() {
+    // Get initial values from blade template
+    const initialTemp = parseFloat(document.getElementById('tempValue').textContent) || 27.0;
+    const initialOxygen = parseFloat(document.getElementById('oxygenValue').textContent) || 6.5;
+    const initialPh = parseFloat(document.getElementById('phValue').textContent) || 7.0;
+    
     // Temperature Gauge
     const tempCtx = document.getElementById('temperatureGauge').getContext('2d');
     window.temperatureChart = new Chart(tempCtx, {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [26.3, 33.7], // Current value and remaining to max (60)
+                data: [initialTemp, 60 - initialTemp], // Current value and remaining to max (60)
                 backgroundColor: [
                     createGradient(tempCtx, ['#ef4444', '#f97316', '#eab308', '#22c55e']),
                     '#e5e7eb'
@@ -211,7 +216,7 @@ function initializeGaugeCharts() {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [8.5, 1.5], // Current value and remaining to max (10)
+                data: [initialOxygen, 10 - initialOxygen], // Current value and remaining to max (10)
                 backgroundColor: [
                     createGradient(oxygenCtx, ['#ef4444', '#f97316', '#3b82f6', '#06b6d4']),
                     '#e5e7eb'
@@ -238,7 +243,7 @@ function initializeGaugeCharts() {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [6.8, 7.2], // Current value and remaining to max (14)
+                data: [initialPh, 14 - initialPh], // Current value and remaining to max (14)
                 backgroundColor: [
                     createGradient(phCtx, ['#ef4444', '#22c55e', '#3b82f6']),
                     '#e5e7eb'
@@ -269,28 +274,37 @@ function createGradient(ctx, colors) {
 }
 
 function updateGaugeData() {
-    // Simulate real-time data updates
-    const newTemp = (24 + Math.random() * 6).toFixed(1); // 24-30°C
-    const newOxygen = (6 + Math.random() * 4).toFixed(1); // 6-10 ppm
-    const newPh = (6.0 + Math.random() * 2.5).toFixed(1); // 6.0-8.5 pH
+    // Fetch real sensor data from API
+    fetch('{{ route("api.sensor-data") }}?hours=1')
+        .then(response => response.json())
+        .then(result => {
+            if (result.success && result.latest) {
+                const newTemp = parseFloat(result.latest.temperature).toFixed(1);
+                const newOxygen = parseFloat(result.latest.oxygen).toFixed(1);
+                const newPh = parseFloat(result.latest.ph).toFixed(1);
 
-    // Update Temperature
-    document.getElementById('tempValue').textContent = newTemp;
-    updateStatus('temp', newTemp, 24, 30);
-    window.temperatureChart.data.datasets[0].data = [parseFloat(newTemp), 60 - parseFloat(newTemp)];
-    window.temperatureChart.update('none');
+                // Update Temperature
+                document.getElementById('tempValue').textContent = newTemp;
+                updateStatus('temp', newTemp, 24, 30);
+                window.temperatureChart.data.datasets[0].data = [parseFloat(newTemp), 60 - parseFloat(newTemp)];
+                window.temperatureChart.update('none');
 
-    // Update Oxygen
-    document.getElementById('oxygenValue').textContent = newOxygen;
-    updateStatus('oxygen', newOxygen, 6, 10);
-    window.oxygenChart.data.datasets[0].data = [parseFloat(newOxygen), 10 - parseFloat(newOxygen)];
-    window.oxygenChart.update('none');
+                // Update Oxygen
+                document.getElementById('oxygenValue').textContent = newOxygen;
+                updateStatus('oxygen', newOxygen, 5, 10);
+                window.oxygenChart.data.datasets[0].data = [parseFloat(newOxygen), 10 - parseFloat(newOxygen)];
+                window.oxygenChart.update('none');
 
-    // Update pH
-    document.getElementById('phValue').textContent = newPh;
-    updateStatus('ph', newPh, 6.5, 8.5);
-    window.phChart.data.datasets[0].data = [parseFloat(newPh), 14 - parseFloat(newPh)];
-    window.phChart.update('none');
+                // Update pH
+                document.getElementById('phValue').textContent = newPh;
+                updateStatus('ph', newPh, 6.5, 8.5);
+                window.phChart.data.datasets[0].data = [parseFloat(newPh), 14 - parseFloat(newPh)];
+                window.phChart.update('none');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching sensor data:', error);
+        });
 }
 
 function updateStatus(type, value, min, max) {
@@ -313,6 +327,9 @@ function updateStatus(type, value, min, max) {
         statusElement.className = 'px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-800';
     }
 }
+
+// Auto-refresh gauge data every 30 seconds (same as user dashboard)
+setInterval(updateGaugeData, 30000);
 
 // Quick Actions functionality
 function navigateTo(page) {

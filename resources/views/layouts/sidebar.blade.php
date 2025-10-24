@@ -89,9 +89,20 @@
             </div>
         </nav>
         
-        <!-- Sidebar Footer -->
-        <div class="px-4 py-4 border-t border-gray-600">
-            <div class="text-center text-gray-400 text-xs">
+        <!-- Sidebar Footer with Logout -->
+        <div class="px-4 py-4 border-t border-gray-600 space-y-3">
+            <!-- Logout Button -->
+            <form method="POST" action="{{ route('logout') }}" class="block" id="logoutFormSidebar">
+                @csrf
+                <button type="button" onclick="confirmLogout('logoutFormSidebar')" class="w-full flex items-center px-4 py-3 text-white bg-red-600 hover:bg-red-700 rounded-lg group transition-all">
+                    <div class="flex items-center justify-center w-8 h-8 bg-white bg-opacity-20 rounded-lg mr-3 group-hover:bg-opacity-30 transition-all">
+                        <i class="fas fa-sign-out-alt text-sm"></i>
+                    </div>
+                    <span class="font-medium">Sign Out</span>
+                </button>
+            </form>
+            
+            <div class="text-center text-gray-400 text-xs pt-2">
                 <p>Version 1.0.0</p>
                 <p>© 2025 IoT Fish Monitor</p>
             </div>

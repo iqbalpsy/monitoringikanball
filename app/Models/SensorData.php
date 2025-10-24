@@ -5,6 +5,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
+/**
+ * @property int $id
+ * @property int $device_id
+ * @property numeric|null $temperature
+ * @property numeric|null $ph
+ * @property numeric|null $oxygen
+ * @property \Illuminate\Support\Carbon $recorded_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Device $device
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData inTimeRange($start, $end)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData latest($limit = 10)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData whereDeviceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData whereOxygen($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData wherePh($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData whereRecordedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData whereTemperature($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SensorData whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class SensorData extends Model
 {
     use HasFactory;
@@ -13,9 +38,10 @@ class SensorData extends Model
 
     protected $fillable = [
         'device_id',
-        'ph_level',
+        'ph',
         'temperature',
-        'oxygen_level',
+        'oxygen',
+        'voltage',
         'turbidity',
         'raw_data',
         'recorded_at',
@@ -24,9 +50,10 @@ class SensorData extends Model
     protected function casts(): array
     {
         return [
-            'ph_level' => 'decimal:2',
+            'ph' => 'decimal:2',
             'temperature' => 'decimal:2',
-            'oxygen_level' => 'decimal:2',
+            'oxygen' => 'decimal:2',
+            'voltage' => 'decimal:2',
             'turbidity' => 'decimal:2',
             'raw_data' => 'array',
             'recorded_at' => 'datetime',
@@ -62,7 +89,7 @@ class SensorData extends Model
      */
     public function isPhNormal(): bool
     {
-        return $this->ph_level >= 6.5 && $this->ph_level <= 8.5;
+        return $this->ph >= 6.5 && $this->ph <= 8.5;
     }
 
     /**
@@ -78,6 +105,6 @@ class SensorData extends Model
      */
     public function isOxygenAdequate(): bool
     {
-        return $this->oxygen_level >= 5; // Minimum 5 mg/L
+        return $this->oxygen >= 5; // Minimum 5 mg/L
     }
 }
